@@ -1,7 +1,13 @@
 package main
 
-import "fmt"
+import (
+	"github.com/Valgard/godotenv"
+	"log"
+)
 
 func main() {
-	fmt.Println("Hello world!")
+	dotEnv := godotenv.New()
+	if err := dotEnv.Load(".env"); err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
 }
