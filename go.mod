@@ -9,4 +9,8 @@ require (
 	github.com/lib/pq v1.10.9
 )
 
-require github.com/Valgard/go-pcre v0.0.0-20200510215507-235e400e25e9 // indirect
+require (
+	github.com/Valgard/go-pcre v0.0.0-20200510215507-235e400e25e9 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
+	golang.org/x/crypto v0.12.0 // indirect
+)

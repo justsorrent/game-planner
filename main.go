@@ -40,11 +40,18 @@ func main() {
 	router.Get("/healtz", handlers.HandleHealtz)
 
 	v1Router := chi.NewRouter()
+	// games routes
+	// TODO: add auth middleware
 	v1Router.Get("/games", cfg.HandleGetGames)
 	v1Router.Post("/games", cfg.HandleCreateGame)
 	v1Router.Put("/games/{id}", cfg.HandleUpdateGameById)
 	v1Router.Get("/games/{id}", cfg.HandleGetGameById)
 	v1Router.Delete("/games/{id}", cfg.HandleDeleteGameById)
+	// users routes
+	v1Router.Post("/users", cfg.HandleCreateUser)
+	// session routes
+	v1Router.Post("/session", cfg.HandleCreateSession)
+	v1Router.Put("/session", cfg.HandleRefreshSession)
 	router.Mount("/v1", v1Router)
 
 	serverPort := os.Getenv("PORT")

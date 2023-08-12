@@ -20,4 +20,20 @@ type Game struct {
 	EndingAt    sql.NullTime
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	GmID        uuid.NullUUID
+}
+
+type User struct {
+	ID          uuid.UUID
+	DisplayName string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+type UserCredential struct {
+	ID           uuid.UUID
+	PasswordHash string
+	Email        string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }

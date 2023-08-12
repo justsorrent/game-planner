@@ -1,6 +1,6 @@
 -- name: CreateGame :one
-insert into games (id, name, description, url, starting_at, ending_at)
-values ($1, $2, $3, $4, $5, $6)
+insert into games (id, name, description, url, starting_at, ending_at, gm_id)
+values ($1, $2, $3, $4, $5, $6, $7)
 returning *;
 
 -- name: GetGames :many

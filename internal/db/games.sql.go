@@ -13,9 +13,9 @@ import (
 )
 
 const createGame = `-- name: CreateGame :one
-insert into games (id, name, description, url, starting_at, ending_at)
-values ($1, $2, $3, $4, $5, $6)
-returning id, name, description, url, starting_at, ending_at, created_at, updated_at
+insert into games (id, name, description, url, starting_at, ending_at, gm_id)
+values ($1, $2, $3, $4, $5, $6, $7)
+returning id, name, description, url, starting_at, ending_at, created_at, updated_at, gm_id
 `
 
 type CreateGameParams struct {
@@ -25,6 +25,7 @@ type CreateGameParams struct {
 	Url         sql.NullString
 	StartingAt  sql.NullTime
 	EndingAt    sql.NullTime
+	GmID        uuid.NullUUID
 }
 
 func (q *Queries) CreateGame(ctx context.Context, arg CreateGameParams) (Game, error) {
@@ -35,6 +36,7 @@ func (q *Queries) CreateGame(ctx context.Context, arg CreateGameParams) (Game, e
 		arg.Url,
 		arg.StartingAt,
 		arg.EndingAt,
+		arg.GmID,
 	)
 	var i Game
 	err := row.Scan(
@@ -46,6 +48,7 @@ func (q *Queries) CreateGame(ctx context.Context, arg CreateGameParams) (Game, e
 		&i.EndingAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.GmID,
 	)
 	return i, err
 }
@@ -60,7 +63,7 @@ func (q *Queries) DeleteGame(ctx context.Context, id uuid.UUID) error {
 }
 
 const getGameById = `-- name: GetGameById :one
-select id, name, description, url, starting_at, ending_at, created_at, updated_at from games where id = $1
+select id, name, description, url, starting_at, ending_at, created_at, updated_at, gm_id from games where id = $1
 `
 
 func (q *Queries) GetGameById(ctx context.Context, id uuid.UUID) (Game, error) {
@@ -75,12 +78,13 @@ func (q *Queries) GetGameById(ctx context.Context, id uuid.UUID) (Game, error) {
 		&i.EndingAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.GmID,
 	)
 	return i, err
 }
 
 const getGameByStartingDate = `-- name: GetGameByStartingDate :many
-select id, name, description, url, starting_at, ending_at, created_at, updated_at from games where date(starting_at) = $1
+select id, name, description, url, starting_at, ending_at, created_at, updated_at, gm_id from games where date(starting_at) = $1
 `
 
 func (q *Queries) GetGameByStartingDate(ctx context.Context, startingAt sql.NullTime) ([]Game, error) {
@@ -101,6 +105,7 @@ func (q *Queries) GetGameByStartingDate(ctx context.Context, startingAt sql.Null
 			&i.EndingAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.GmID,
 		); err != nil {
 			return nil, err
 		}
@@ -116,7 +121,7 @@ func (q *Queries) GetGameByStartingDate(ctx context.Context, startingAt sql.Null
 }
 
 const getGames = `-- name: GetGames :many
-select id, name, description, url, starting_at, ending_at, created_at, updated_at from games
+select id, name, description, url, starting_at, ending_at, created_at, updated_at, gm_id from games
 `
 
 func (q *Queries) GetGames(ctx context.Context) ([]Game, error) {
@@ -137,6 +142,7 @@ func (q *Queries) GetGames(ctx context.Context) ([]Game, error) {
 			&i.EndingAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.GmID,
 		); err != nil {
 			return nil, err
 		}
@@ -152,7 +158,7 @@ func (q *Queries) GetGames(ctx context.Context) ([]Game, error) {
 }
 
 const getGamesOrderByStartingDate = `-- name: GetGamesOrderByStartingDate :many
-select id, name, description, url, starting_at, ending_at, created_at, updated_at from games order by starting_at desc
+select id, name, description, url, starting_at, ending_at, created_at, updated_at, gm_id from games order by starting_at desc
 `
 
 func (q *Queries) GetGamesOrderByStartingDate(ctx context.Context) ([]Game, error) {
@@ -173,6 +179,7 @@ func (q *Queries) GetGamesOrderByStartingDate(ctx context.Context) ([]Game, erro
 			&i.EndingAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.GmID,
 		); err != nil {
 			return nil, err
 		}
