@@ -52,6 +52,7 @@ func main() {
 	// session routes
 	v1Router.Post("/session", cfg.HandleCreateSession)
 	v1Router.Put("/session", cfg.HandleRefreshSession)
+	v1Router.Delete("/session", cfg.HandleDeleteSession)
 	router.Mount("/v1", v1Router)
 
 	serverPort := os.Getenv("PORT")
