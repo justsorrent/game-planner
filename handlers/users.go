@@ -14,6 +14,11 @@ type userDto struct {
 	Password string `json:"password"`
 }
 
+type userInfoResource struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+}
+
 func (cfg *ApiConfig) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	dto := userDto{}
 	err := json.NewDecoder(r.Body).Decode(&dto)
@@ -62,4 +67,11 @@ func createSession(userId uuid.UUID) string {
 	sessionToken := uuid.NewString()
 	sessionCacheInstance.update(sessionToken, Session{userId})
 	return sessionToken
+}
+
+func transformDbUserToResource(user db.User) userInfoResource {
+	return userInfoResource{
+		ID:       user.ID.String(),
+		Username: user.DisplayName,
+	}
 }

@@ -19,17 +19,18 @@ type gameDto struct {
 }
 
 type gameResource struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Url         string    `json:"url"`
-	StartTime   time.Time `json:"startTime"`
-	EndTime     time.Time `json:"endTime"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ID          string           `json:"id"`
+	Name        string           `json:"name"`
+	Description string           `json:"description"`
+	Url         string           `json:"url"`
+	StartTime   time.Time        `json:"startTime"`
+	EndTime     time.Time        `json:"endTime"`
+	CreatedAt   time.Time        `json:"createdAt"`
+	UpdatedAt   time.Time        `json:"updatedAt"`
+	GameMaster  userInfoResource `json:"gameMaster"`
 }
 
-func (cfg *ApiConfig) HandleCreateGame(w http.ResponseWriter, r *http.Request) {
+func (cfg *ApiConfig) HandleCreateGame(w http.ResponseWriter, r *http.Request, user db.User) {
 	dto := gameDto{}
 	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
@@ -48,13 +49,14 @@ func (cfg *ApiConfig) HandleCreateGame(w http.ResponseWriter, r *http.Request) {
 		Url:         sql.NullString{String: dto.Url, Valid: dto.Url != ""},
 		StartingAt:  sql.NullTime{Time: dto.StartTime, Valid: true},
 		EndingAt:    sql.NullTime{Time: dto.EndTime, Valid: true},
+		GmID:        uuid.NullUUID{UUID: user.ID, Valid: true},
 	})
 	if err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	res := transformDbGameToResource(createdGame)
+	res := transformDbGameToResourceWithGmInfo(createdGame, user)
 	RespondWithJSON(w, http.StatusCreated, res)
 }
 
@@ -79,7 +81,12 @@ func (cfg *ApiConfig) HandleGetGameById(w http.ResponseWriter, r *http.Request) 
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	data := transformDbGameToResource(game)
+	gm, err := cfg.DB.GetUserById(r.Context(), game.GmID.UUID)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	data := transformDbGameToResourceWithGmInfo(game, gm)
 	RespondWithJSON(w, http.StatusOK, data)
 }
 
@@ -144,5 +151,19 @@ func transformDbGameToResource(game db.Game) gameResource {
 		EndTime:     game.EndingAt.Time,
 		CreatedAt:   game.CreatedAt,
 		UpdatedAt:   game.UpdatedAt,
+	}
+}
+
+func transformDbGameToResourceWithGmInfo(game db.Game, gm db.User) gameResource {
+	return gameResource{
+		ID:          game.ID.String(),
+		Name:        game.Name,
+		Description: game.Description.String,
+		Url:         game.Url.String,
+		StartTime:   game.StartingAt.Time,
+		EndTime:     game.EndingAt.Time,
+		CreatedAt:   game.CreatedAt,
+		UpdatedAt:   game.UpdatedAt,
+		GameMaster:  transformDbUserToResource(gm),
 	}
 }

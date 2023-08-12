@@ -43,7 +43,7 @@ func main() {
 	// games routes
 	// TODO: add auth middleware
 	v1Router.Get("/games", cfg.HandleGetGames)
-	v1Router.Post("/games", cfg.HandleCreateGame)
+	v1Router.Post("/games", cfg.AuthMiddleware(cfg.HandleCreateGame))
 	v1Router.Put("/games/{id}", cfg.HandleUpdateGameById)
 	v1Router.Get("/games/{id}", cfg.HandleGetGameById)
 	v1Router.Delete("/games/{id}", cfg.HandleDeleteGameById)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/justsorrent/game-planner/internal/db"
 	"github.com/patrickmn/go-cache"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
@@ -88,6 +89,26 @@ func CheckSessionCookie(r *http.Request) (Session, string, error) {
 		return session, "", fmt.Errorf("no session found in cache")
 	}
 	return session, sessionToken, nil
+}
+
+type authedHandler func(w http.ResponseWriter, r *http.Request, user db.User)
+
+func (cfg *ApiConfig) AuthMiddleware(next authedHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		session, _, err := CheckSessionCookie(r)
+		if err != nil {
+			RespondWithError(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		user, err := cfg.DB.GetUserById(r.Context(), session.UserId)
+		if err != nil {
+			RespondWithError(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		next(w, r, user)
+	}
 }
 
 type sessionCache struct {
