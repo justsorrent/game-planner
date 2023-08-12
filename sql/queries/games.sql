@@ -24,3 +24,6 @@ set name = $2,
     ending_at = $6,
     updated_at = now()
 where id = $1;
+
+-- name: DeleteGame :exec
+delete from games where id = $1;

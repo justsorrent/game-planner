@@ -50,6 +50,15 @@ func (q *Queries) CreateGame(ctx context.Context, arg CreateGameParams) (Game, e
 	return i, err
 }
 
+const deleteGame = `-- name: DeleteGame :exec
+delete from games where id = $1
+`
+
+func (q *Queries) DeleteGame(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteGame, id)
+	return err
+}
+
 const getGameById = `-- name: GetGameById :one
 select id, name, description, url, starting_at, ending_at, created_at, updated_at from games where id = $1
 `

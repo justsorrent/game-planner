@@ -1,6 +1,10 @@
 package handlers
 
 import (
+	"database/sql"
+	"encoding/json"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/justsorrent/game-planner/internal/db"
 	"net/http"
 	"time"
@@ -25,8 +29,33 @@ type gameResource struct {
 	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
-func (cfg *ApiConfig) CreateGame(w http.ResponseWriter, r *http.Request) {
-	// ...
+func (cfg *ApiConfig) HandleCreateGame(w http.ResponseWriter, r *http.Request) {
+	dto := gameDto{}
+	err := json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	newGameId, err := uuid.NewUUID()
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	createdGame, err := cfg.DB.CreateGame(r.Context(), db.CreateGameParams{
+		ID:          newGameId,
+		Name:        dto.Name,
+		Description: sql.NullString{String: dto.Description, Valid: dto.Description != ""},
+		Url:         sql.NullString{String: dto.Url, Valid: dto.Url != ""},
+		StartingAt:  sql.NullTime{Time: dto.StartTime, Valid: true},
+		EndingAt:    sql.NullTime{Time: dto.EndTime, Valid: true},
+	})
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	res := transformDbGameToResource(createdGame)
+	RespondWithJSON(w, http.StatusCreated, res)
 }
 
 func (cfg *ApiConfig) HandleGetGames(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +65,64 @@ func (cfg *ApiConfig) HandleGetGames(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	data := transformDbGanesToResources(games)
+	RespondWithJSON(w, http.StatusOK, data)
+}
+
+func (cfg *ApiConfig) HandleGetGameById(w http.ResponseWriter, r *http.Request) {
+	gameId, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	game, err := cfg.DB.GetGameById(r.Context(), gameId)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	data := transformDbGameToResource(game)
+	RespondWithJSON(w, http.StatusOK, data)
+}
+
+func (cfg *ApiConfig) HandleDeleteGameById(w http.ResponseWriter, r *http.Request) {
+	gameId, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	err = cfg.DB.DeleteGame(r.Context(), gameId)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	RespondWithJSON(w, http.StatusNoContent, nil)
+}
+
+func (cfg *ApiConfig) HandleUpdateGameById(w http.ResponseWriter, r *http.Request) {
+	gameId, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	dto := gameDto{}
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	err = cfg.DB.UpdateGame(r.Context(), db.UpdateGameParams{
+		ID:          gameId,
+		Name:        dto.Name,
+		Description: sql.NullString{String: dto.Description, Valid: dto.Description != ""},
+		Url:         sql.NullString{String: dto.Url, Valid: dto.Url != ""},
+		StartingAt:  sql.NullTime{Time: dto.StartTime, Valid: true},
+		EndingAt:    sql.NullTime{Time: dto.EndTime, Valid: true},
+	})
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	updatedGame, err := cfg.DB.GetGameById(r.Context(), gameId)
+	data := transformDbGameToResource(updatedGame)
 	RespondWithJSON(w, http.StatusOK, data)
 }
 

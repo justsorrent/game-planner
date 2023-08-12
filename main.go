@@ -41,6 +41,10 @@ func main() {
 
 	v1Router := chi.NewRouter()
 	v1Router.Get("/games", cfg.HandleGetGames)
+	v1Router.Post("/games", cfg.HandleCreateGame)
+	v1Router.Put("/games/{id}", cfg.HandleUpdateGameById)
+	v1Router.Get("/games/{id}", cfg.HandleGetGameById)
+	v1Router.Delete("/games/{id}", cfg.HandleDeleteGameById)
 	router.Mount("/v1", v1Router)
 
 	serverPort := os.Getenv("PORT")
