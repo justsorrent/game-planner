@@ -1,13 +1,17 @@
 package main
 
 import (
+	"database/sql"
 	"github.com/Valgard/godotenv"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/justsorrent/game-planner/handlers"
+	"github.com/justsorrent/game-planner/internal/db"
 	"log"
 	"net/http"
 	"os"
+
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -16,10 +20,28 @@ func main() {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
+	dbString := os.Getenv("DB_STRING")
+	if dbString == "" {
+		log.Fatal("Error loading DB_STRING from .env file")
+	}
+
+	conn, err := sql.Open("postgres", dbString)
+	if err != nil {
+		log.Fatalf("Cannot connect to DB. %v", err)
+	}
+
+	cfg := handlers.ApiConfig{
+		DB: db.New(conn),
+	}
+
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
 	router.Get("/healtz", handlers.HandleHealtz)
+
+	v1Router := chi.NewRouter()
+	v1Router.Get("/games", cfg.HandleGetGames)
+	router.Mount("/v1", v1Router)
 
 	serverPort := os.Getenv("PORT")
 	if serverPort == "" {
