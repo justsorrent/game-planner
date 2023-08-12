@@ -90,12 +90,23 @@ func (cfg *ApiConfig) HandleGetGameById(w http.ResponseWriter, r *http.Request) 
 	RespondWithJSON(w, http.StatusOK, data)
 }
 
-func (cfg *ApiConfig) HandleDeleteGameById(w http.ResponseWriter, r *http.Request) {
+func (cfg *ApiConfig) HandleDeleteGameById(w http.ResponseWriter, r *http.Request, user db.User) {
 	gameId, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		RespondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+
+	game, err := cfg.DB.GetGameById(r.Context(), gameId)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if game.GmID.UUID != user.ID {
+		RespondWithError(w, http.StatusForbidden, "You are not the game master")
+		return
+	}
+
 	err = cfg.DB.DeleteGame(r.Context(), gameId)
 	if err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
@@ -104,12 +115,23 @@ func (cfg *ApiConfig) HandleDeleteGameById(w http.ResponseWriter, r *http.Reques
 	RespondWithJSON(w, http.StatusNoContent, nil)
 }
 
-func (cfg *ApiConfig) HandleUpdateGameById(w http.ResponseWriter, r *http.Request) {
+func (cfg *ApiConfig) HandleUpdateGameById(w http.ResponseWriter, r *http.Request, user db.User) {
 	gameId, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		RespondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+
+	game, err := cfg.DB.GetGameById(r.Context(), gameId)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if game.GmID.UUID != user.ID {
+		RespondWithError(w, http.StatusForbidden, "You are not the game master")
+		return
+	}
+
 	dto := gameDto{}
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
